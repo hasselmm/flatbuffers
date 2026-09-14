@@ -892,6 +892,37 @@ void WarningsAsErrorsTest() {
   }
 }
 
+void SnakeCaseFieldsTest() {
+  // Triggers the field naming warning.
+  const char* const schema =
+      "table T { THIS_NAME_CAUSES_A_WARNING:string; }\n"
+      "root_type T;";
+
+  {
+    // opts.no_warnings should default to false
+    flatbuffers::IDLOptions opts;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse(schema), true);
+    TEST_NOTNULL(strstr(parser.error_.c_str(), "snake_case"));
+  }
+  {
+    // opts.no_warnings inhibits the warning entirely
+    flatbuffers::IDLOptions opts;
+    opts.no_warnings = true;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse(schema), true);
+    TEST_EQ(parser.error_.empty(), true);
+  }
+  {
+    // an inhibited warning must not trip opts.warnings_as_errors
+    flatbuffers::IDLOptions opts;
+    opts.no_warnings = true;
+    opts.warnings_as_errors = true;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse(schema), true);
+  }
+}
+
 void StringVectorDefaultsTest() {
   std::vector<std::string> schemas;
   schemas.push_back("table Monster { mana: string = \"\"; }");
