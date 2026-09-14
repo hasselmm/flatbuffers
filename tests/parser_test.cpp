@@ -876,7 +876,7 @@ void ValidSameNameDifferentNamespaceTest() {
 void WarningsAsErrorsTest() {
   {
     flatbuffers::IDLOptions opts;
-    // opts.warnings_as_errors should default to false
+    // opts.warnings_as_errors should default to none
     flatbuffers::Parser parser(opts);
     TEST_EQ(parser.Parse("table T { THIS_NAME_CAUSES_A_WARNING:string;}\n"
                          "root_type T;"),
@@ -884,11 +884,55 @@ void WarningsAsErrorsTest() {
   }
   {
     flatbuffers::IDLOptions opts;
-    opts.warnings_as_errors = true;
+    opts.warnings_as_errors = flatbuffers::IDLOptions::kAllWarnings;
     flatbuffers::Parser parser(opts);
     TEST_EQ(parser.Parse("table T { THIS_NAME_CAUSES_A_WARNING:string;}\n"
                          "root_type T;"),
             false);
+  }
+}
+
+void SelectedWarningsAsErrorsTest() {
+  // A schema triggering two distinct warnings.
+  const char* const schema =
+      "enum BitFlags : byte (bit_flags) { A }\n"
+      "table T { THIS_NAME_CAUSES_A_WARNING:string; }\n"
+      "root_type T;";
+
+  {
+    // A key promotes the warning it names ...
+    flatbuffers::IDLOptions opts;
+    opts.warnings_as_errors = flatbuffers::IDLOptions::kStrictFieldNames;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse(schema), false);
+  }
+  {
+    // ... and only that one: a warning nobody promoted stays a warning.
+    flatbuffers::IDLOptions opts;
+    opts.warnings_as_errors = flatbuffers::IDLOptions::kRepeatedAttribute;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse(schema), true);
+    TEST_NOTNULL(strstr(parser.error_.c_str(), "snake_case"));
+    TEST_NOTNULL(strstr(parser.error_.c_str(), "must be unsigned"));
+  }
+  {
+    // Several keys can be combined.
+    flatbuffers::IDLOptions opts;
+    opts.warnings_as_errors = flatbuffers::IDLOptions::kRepeatedAttribute |
+                              flatbuffers::IDLOptions::kUnsignedBitFlags;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse(schema), false);
+  }
+  {
+    // An inhibited warning is never reported and therefore never promoted,
+    // even when the very same key promotes it.
+    flatbuffers::IDLOptions opts;
+    opts.disabled_warnings = flatbuffers::IDLOptions::kStrictFieldNames;
+    opts.warnings_as_errors = flatbuffers::IDLOptions::kStrictFieldNames;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse("table T { THIS_NAME_CAUSES_A_WARNING:string; }\n"
+                         "root_type T;"),
+            true);
   }
 }
 

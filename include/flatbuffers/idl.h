@@ -728,7 +728,8 @@ struct IDLOptions {
   std::string filename_extension;
   // Warnings that must not be reported.
   WarningFlags disabled_warnings;
-  bool warnings_as_errors;
+  // Warnings that must fail the parser instead of being reported.
+  WarningFlags warnings_as_errors;
   std::string project_root;
   bool cs_global_alias;
   bool json_nested_flatbuffers;
@@ -873,7 +874,7 @@ struct IDLOptions {
         filename_suffix("_generated"),
         filename_extension(),
         disabled_warnings(0),
-        warnings_as_errors(false),
+        warnings_as_errors(0),
         project_root(""),
         cs_global_alias(false),
         json_nested_flatbuffers(true),
@@ -999,7 +1000,7 @@ class Parser : public ParserState {
         root_struct_def_(nullptr),
         opts(options),
         uses_flexbuffers_(false),
-        has_warning_(false),
+        has_critical_warning_(false),
         advanced_features_(0),
         source_(nullptr),
         anonymous_counter_(0),
@@ -1268,7 +1269,7 @@ class Parser : public ParserState {
 
   IDLOptions opts;
   bool uses_flexbuffers_;
-  bool has_warning_;
+  bool has_critical_warning_;
 
   uint64_t advanced_features_;
 

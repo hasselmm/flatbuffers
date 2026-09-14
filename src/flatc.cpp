@@ -246,7 +246,12 @@ const static FlatCOption flatc_options[] = {
      "attribute on the same field * 'repeated-attribute' - an attribute is "
      "given more than once on the same declaration * 'unsigned-bit-flags' - a "
      "bit_flags enum has a signed underlying type."},
-    {"", "warnings-as-errors", "", "Treat all warnings as errors."},
+    {"", "warnings-as-errors", "[=WARNING,...]",
+     "Treat warnings as errors. Without an argument all warnings are treated "
+     "as errors. With a comma separated list of keys only the named warnings "
+     "are. Accepts the same WARNING values as --no-warnings. A warning "
+     "inhibited by --no-warnings is not reported and therefore never becomes "
+     "an error."},
     {"", "cs-global-alias", "",
      "Prepend \"global::\" to all user generated csharp classes and "
      "structs."},
@@ -726,7 +731,10 @@ FlatCOptions FlatCompiler::ParseFromCommandLineArguments(int argc,
         opts.disabled_warnings |=
             ParseWarnings(arg.substr(std::string("--no-warnings=").size()));
       } else if (arg == "--warnings-as-errors") {
-        opts.warnings_as_errors = true;
+        opts.warnings_as_errors = IDLOptions::kAllWarnings;
+      } else if (arg.rfind("--warnings-as-errors=", 0) == 0) {
+        opts.warnings_as_errors |= ParseWarnings(
+            arg.substr(std::string("--warnings-as-errors=").size()));
       } else if (arg == "--cpp-std") {
         if (++argi >= argc)
           Error("missing C++ standard specification" + arg, true);

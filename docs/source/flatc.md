@@ -259,6 +259,12 @@ list of `FILES...`.
         declaration.
     -   `unsigned-bit-flags` : A `bit_flags` enum has a signed underlying type.
 
+-   `--warnings-as-errors[=WARNING,...]` : Treat warnings as errors. Without an
+    argument all warnings are treated as errors. With a comma separated list of
+    keys only the named warnings are. Accepts the same `WARNING` values as
+    `--no-warnings`. A warning inhibited by `--no-warnings` is not reported and
+    therefore never becomes an error.
+
 -   `--cs-global-alias` : Prepend `global::` to all user generated csharp classes and structs.
 
 -   `--json-nested-bytes` : Allow a nested_flatbuffer field to be parsed as a

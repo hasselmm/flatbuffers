@@ -408,9 +408,8 @@ void Parser::Warning(const std::string& msg) {
 
 void Parser::Warning(IDLOptions::Warning id, const std::string& msg) {
   if ((opts.disabled_warnings & id) == id) return;
-
+  if ((opts.warnings_as_errors & id) == id) has_critical_warning_ = true;
   Message("warning: " + msg);
-  has_warning_ = true;  // for opts.warnings_as_errors
 }
 
 CheckedError Parser::Error(const std::string& msg) {
@@ -3943,7 +3942,7 @@ CheckedError Parser::DoParse(const char* source, const char** include_paths,
     }
   }
   EXPECT(kTokenEof);
-  if (opts.warnings_as_errors && has_warning_) {
+  if (opts.warnings_as_errors && has_critical_warning_) {
     return Error("treating warnings as errors, failed due to above warnings");
   }
   return NoError();
