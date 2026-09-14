@@ -892,34 +892,66 @@ void WarningsAsErrorsTest() {
   }
 }
 
-void SnakeCaseFieldsTest() {
-  // Triggers the field naming warning.
+void DisabledWarningsTest() {
+  // A schema triggering two distinct warnings.
   const char* const schema =
+      "enum BitFlags : byte (bit_flags) { A }\n"
+      "table T { THIS_NAME_CAUSES_A_WARNING:string; }\n"
+      "root_type T;";  
+  // A schema triggering the kStrictFieldNames warning only.
+  const char* const field_name_schema =
       "table T { THIS_NAME_CAUSES_A_WARNING:string; }\n"
       "root_type T;";
 
   {
-    // opts.no_warnings should default to false
+    // By default every warning is reported.
     flatbuffers::IDLOptions opts;
     flatbuffers::Parser parser(opts);
     TEST_EQ(parser.Parse(schema), true);
     TEST_NOTNULL(strstr(parser.error_.c_str(), "snake_case"));
+    TEST_NOTNULL(strstr(parser.error_.c_str(), "must be unsigned"));
   }
   {
-    // opts.no_warnings inhibits the warning entirely
+    // A single key inhibits the warning it names, and only that one.
     flatbuffers::IDLOptions opts;
-    opts.no_warnings = true;
+    opts.disabled_warnings = flatbuffers::IDLOptions::kStrictFieldNames;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse(schema), true);
+    TEST_EQ(strstr(parser.error_.c_str(), "snake_case") == nullptr, true);
+    TEST_NOTNULL(strstr(parser.error_.c_str(), "must be unsigned"));
+  }
+  {
+    // Several keys can be combined.
+    flatbuffers::IDLOptions opts;
+    opts.disabled_warnings = flatbuffers::IDLOptions::kStrictFieldNames |
+                             flatbuffers::IDLOptions::kUnsignedBitFlags;
     flatbuffers::Parser parser(opts);
     TEST_EQ(parser.Parse(schema), true);
     TEST_EQ(parser.error_.empty(), true);
   }
   {
-    // an inhibited warning must not trip opts.warnings_as_errors
+    // kAllWarnings inhibits everything, just like a bare `--no-warnings`.
     flatbuffers::IDLOptions opts;
-    opts.no_warnings = true;
-    opts.warnings_as_errors = true;
+    opts.disabled_warnings = flatbuffers::IDLOptions::kAllWarnings;
     flatbuffers::Parser parser(opts);
     TEST_EQ(parser.Parse(schema), true);
+    TEST_EQ(parser.error_.empty(), true);
+  }
+  {
+    // An inhibited warning must not trip opts.warnings_as_errors ...
+    flatbuffers::IDLOptions opts;
+    opts.disabled_warnings = flatbuffers::IDLOptions::kStrictFieldNames;
+    opts.warnings_as_errors = true;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse(field_name_schema), true);
+  }
+  {
+    // ... but a warning that is still enabled must.
+    flatbuffers::IDLOptions opts;
+    opts.disabled_warnings = flatbuffers::IDLOptions::kUnsignedBitFlags;
+    opts.warnings_as_errors = true;
+    flatbuffers::Parser parser(opts);
+    TEST_EQ(parser.Parse(field_name_schema), false);
   }
 }
 

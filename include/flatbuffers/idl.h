@@ -22,6 +22,7 @@
 #include <map>
 #include <memory>
 #include <stack>
+#include <type_traits>
 #include <vector>
 
 #include "flatbuffers/base.h"
@@ -651,6 +652,21 @@ struct IDLOptions {
   // field case style options for C++
   enum CaseStyle { CaseStyle_Unchanged = 0, CaseStyle_Upper, CaseStyle_Lower };
   enum class ProtoIdGapAction { NO_OP, WARNING, ERROR };
+
+  // Diagnostics reported by Parser::Warning(). Each of them can be inhibited
+  // individually via `--no-warnings=<key>`.
+  enum Warning : unsigned {
+    kStrictFieldNames = 1u << 0,
+    kImpliedAttribute = 1u << 1,
+    kRepeatedAttribute = 1u << 2,
+    kUnsignedBitFlags = 1u << 3,
+    kAllWarnings = kStrictFieldNames | kImpliedAttribute | kRepeatedAttribute |
+                   kUnsignedBitFlags,
+  };
+
+  // A bit set of Warning values.
+  using WarningFlags = std::underlying_type<Warning>::type;
+
   bool gen_jvmstatic;
   // Use flexbuffers instead for binary and text generation
   bool use_flexbuffers;
@@ -710,7 +726,8 @@ struct IDLOptions {
   std::string proto_namespace_suffix;
   std::string filename_suffix;
   std::string filename_extension;
-  bool no_warnings;
+  // Warnings that must not be reported.
+  WarningFlags disabled_warnings;
   bool warnings_as_errors;
   std::string project_root;
   bool cs_global_alias;
@@ -855,7 +872,7 @@ struct IDLOptions {
         cpp_static_reflection(false),
         filename_suffix("_generated"),
         filename_extension(),
-        no_warnings(false),
+        disabled_warnings(0),
         warnings_as_errors(false),
         project_root(""),
         cs_global_alias(false),
@@ -1117,6 +1134,7 @@ class Parser : public ParserState {
 
   void Message(const std::string& msg);
   void Warning(const std::string& msg);
+  void Warning(IDLOptions::Warning id, const std::string& msg);
   FLATBUFFERS_CHECKED_ERROR ParseHexNum(int nibbles, uint64_t* val);
   FLATBUFFERS_CHECKED_ERROR Next();
   FLATBUFFERS_CHECKED_ERROR SkipByteOrderMark();

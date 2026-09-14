@@ -24,7 +24,7 @@ void UnknownFieldsTest();
 void ParseUnionTest();
 void ValidSameNameDifferentNamespaceTest();
 void WarningsAsErrorsTest();
-void SnakeCaseFieldsTest();
+void DisabledWarningsTest();
 void StringVectorDefaultsTest();
 void FieldIdentifierTest();
 

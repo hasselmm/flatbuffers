@@ -247,7 +247,17 @@ list of `FILES...`.
 -   `--flexbuffers` : Used with "binary" and "json" options, it generates
      data using schema-less FlexBuffers.
 
--   `--no-warnings` : Inhibit all warning messages.
+-   `--no-warnings[=WARNING,...]` : Inhibit warning messages. Without an
+    argument all warnings are inhibited. With a comma separated list of keys
+    only the named warnings are inhibited. Supported `WARNING` values:
+
+    -   `all` : All of the warnings below.
+    -   `strict-field-names` : A field name is not lowercase snake_case.
+    -   `implied-attribute` : An attribute is already implied by another
+        attribute on the same field.
+    -   `repeated-attribute` : An attribute is given more than once on the same
+        declaration.
+    -   `unsigned-bit-flags` : A `bit_flags` enum has a signed underlying type.
 
 -   `--cs-global-alias` : Prepend `global::` to all user generated csharp classes and structs.
 
